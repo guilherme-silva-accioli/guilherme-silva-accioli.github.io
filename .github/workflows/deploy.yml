@@ -28,7 +28,7 @@ jobs:
           targets: wasm32-unknown-unknown
 
       - name: Install Trunk
-        uses: trunk-rs/trunk-action@v1
+        uses: jetli/trunk-action@v0.5.1
         with:
           version: 'latest'
 

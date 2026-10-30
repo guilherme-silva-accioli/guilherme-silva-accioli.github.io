@@ -1,0 +1,12 @@
+# Rust / Cargo
+/target/
+**/*.rs.bk
+
+# Trunk build output
+/dist/
+
+# IDE / Editor
+.idea/
+.vscode/
+*.swp
+*.swo

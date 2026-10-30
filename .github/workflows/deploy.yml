@@ -33,7 +33,9 @@ jobs:
           version: 'latest'
 
       - name: Build WebAssembly app
-        run: trunk build --release --public-url "/"
+        run: |
+          trunk build --release --public-url "/"
+          cp dist/index.html dist/404.html
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3

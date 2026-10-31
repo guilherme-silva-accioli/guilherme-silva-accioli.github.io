@@ -116,7 +116,45 @@ fn blog_page() -> Html {
     }
 }
 
-// 5. Single Blog Post Page Component (Renders Markdown from Individual File)
+// 5. Comments Component (Giscus / GitHub Discussions)
+#[derive(Properties, PartialEq)]
+pub struct CommentsProps {
+    pub post_id: String,
+}
+
+#[function_component(Comments)]
+pub fn comments(props: &CommentsProps) -> Html {
+    html! {
+        <section class="comments-section">
+            <div class="comments-header">
+                <span class="section-kicker">{ "COMMUNITY OBSERVATIONS" }</span>
+                <h3 class="comments-title">{ "Field Dispatches & Discussion" }</h3>
+                <p class="comments-subtitle">
+                    { "Contributions and notes from fellow researchers. Authenticate with GitHub to record an observation." }
+                </p>
+            </div>
+            <div class="comments-widget-container">
+                <giscus-widget
+                    id="comments"
+                    repo="guilherme-silva-accioli/guilherme-silva-accioli.github.io"
+                    repoid="R_kgDOVcg5fQ"
+                    category="General"
+                    categoryid="DIC_kwDOVcg5fc4DKDGk"
+                    mapping="specific"
+                    term={props.post_id.clone()}
+                    reactionsenabled="1"
+                    emitmetadata="0"
+                    inputposition="top"
+                    theme="light"
+                    lang="en"
+                    loading="lazy">
+                </giscus-widget>
+            </div>
+        </section>
+    }
+}
+
+// 6. Single Blog Post Page Component (Renders Markdown from Individual File)
 #[derive(Properties, PartialEq)]
 struct PostPageProps {
     id: String,
@@ -150,6 +188,8 @@ fn post_page(props: &PostPageProps) -> Html {
                                     { render_markdown(post.content_md) }
                                 </div>
                             </div>
+                            <hr class="comments-entry-divider" />
+                            <Comments post_id={post.id.to_string()} />
                         </article>
                     }
                 } else {

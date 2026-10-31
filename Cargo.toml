@@ -20,6 +20,7 @@ web-sys = { version = "0.3", features = [
     "InputEvent",
     "MouseEvent",
     "Node",
+    "PointerEvent",
     "Storage",
     "Window",
 ] }

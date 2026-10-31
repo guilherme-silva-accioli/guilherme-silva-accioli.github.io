@@ -1,7 +1,7 @@
 use gloo_net::http::Request;
 use serde::{Deserialize, Serialize};
 use wasm_bindgen_futures::spawn_local;
-use web_sys::MouseEvent;
+use web_sys::PointerEvent;
 use yew::prelude::*;
 
 const FIREBASE_URL: &str = "https://mural-69f43-default-rtdb.firebaseio.com/mural.json";
@@ -196,10 +196,10 @@ pub fn mural_page() -> Html {
         })
     };
 
-    // Drag handlers
-    let on_mouse_down = {
+    // Drag handlers (Pointer events unified for mouse & mobile touch)
+    let on_pointer_down = {
         let drag_state = drag_state.clone();
-        Callback::from(move |(id, item_x, item_y, e): (u64, f64, f64, MouseEvent)| {
+        Callback::from(move |(id, item_x, item_y, e): (u64, f64, f64, PointerEvent)| {
             drag_state.set(Some(DragState {
                 id,
                 start_mouse_x: e.client_x() as f64,
@@ -210,12 +210,12 @@ pub fn mural_page() -> Html {
         })
     };
 
-    let on_mouse_move = {
+    let on_pointer_move = {
         let drag_state = drag_state.clone();
         let items = items.clone();
         let board_ref = board_ref.clone();
 
-        Callback::from(move |e: MouseEvent| {
+        Callback::from(move |e: PointerEvent| {
             if let Some(drag) = (*drag_state).clone() {
                 if let Some(board) = board_ref.cast::<web_sys::Element>() {
                     let rect = board.get_bounding_client_rect();
@@ -251,7 +251,7 @@ pub fn mural_page() -> Html {
     };
 
     // When drag ends, save coordinates to Firebase
-    let on_mouse_up = {
+    let on_pointer_up = {
         let drag_state = drag_state.clone();
         let items = items.clone();
         let sync_to_cloud = sync_to_cloud.clone();
@@ -423,9 +423,9 @@ pub fn mural_page() -> Html {
             <div
                 ref={board_ref}
                 class="cork-board-canvas"
-                onmousemove={on_mouse_move}
-                onmouseup={on_mouse_up}
-                onmouseleave={{
+                onpointermove={on_pointer_move}
+                onpointerup={on_pointer_up}
+                onpointerleave={{
                     let drag_state = drag_state.clone();
                     Callback::from(move |_| drag_state.set(None))
                 }}
@@ -435,7 +435,7 @@ pub fn mural_page() -> Html {
                         let item_id = item.id;
                         let item_x = item.x;
                         let item_y = item.y;
-                        let on_mouse_down = on_mouse_down.clone();
+                        let on_pointer_down = on_pointer_down.clone();
                         let delete_item = delete_item.clone();
                         let update_item_text = update_item_text.clone();
                         let editing_id = editing_id.clone();
@@ -454,8 +454,8 @@ pub fn mural_page() -> Html {
                                 key={item.id}
                                 class={classes!(theme_class, is_editing.then_some("is-editing"))}
                                 style={card_style}
-                                onmousedown={Callback::from(move |e: MouseEvent| {
-                                    on_mouse_down.emit((item_id, item_x, item_y, e));
+                                onpointerdown={Callback::from(move |e: PointerEvent| {
+                                    on_pointer_down.emit((item_id, item_x, item_y, e));
                                 })}
                             >
                                 // Pushpin at top

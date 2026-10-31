@@ -4,5 +4,6 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+pulldown-cmark = "0.13.6"
 yew = { version = "0.23.0", features = ["csr"] }
 yew-router = "0.20.0"

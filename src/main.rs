@@ -1,3 +1,6 @@
+mod posts;
+
+use posts::{BlogPost, POSTS, render_markdown};
 use yew::prelude::*;
 use yew_router::prelude::*;
 
@@ -17,54 +20,73 @@ pub enum Route {
     NotFound,
 }
 
-// 2. Data model for blog articles
-#[derive(Clone, PartialEq)]
-struct BlogPost {
-    id: &'static str,
-    title: &'static str,
-    date: &'static str,
-    summary: &'static str,
-    content: &'static str,
+// 2. Reusable Polaroid / Field Specimen Card Component
+#[derive(Properties, PartialEq)]
+pub struct PostCardProps {
+    pub post: BlogPost,
 }
 
-const POSTS: &[BlogPost] = &[
-    BlogPost {
-        id: "getting-started-with-yew",
-        title: "Getting Started with Rust & Yew",
-        date: "October 30, 2026",
-        summary: "Learn how to build lightning-fast web applications using Rust and WebAssembly.",
-        content: "Yew is a modern Rust framework for creating multi-threaded frontend web apps with WebAssembly. It offers high performance, robust compile-time guarantees, and an ergonomic syntax similar to JSX.",
-    },
-    BlogPost {
-        id: "why-webassembly-matters",
-        title: "Why WebAssembly Matters for Modern Web",
-        date: "October 28, 2026",
-        summary: "WebAssembly brings near-native performance to the browser, unlocking new possibilities.",
-        content: "WebAssembly (WASM) enables languages other than JavaScript to run safely and efficiently in web browsers. It is widely used for high-performance apps, games, visualization tools, and reliable web applications.",
-    },
-    BlogPost {
-        id: "deploying-to-github-pages",
-        title: "Automated Deployments with GitHub Actions",
-        date: "October 25, 2026",
-        summary: "How to bundle your WASM app with Trunk and publish it automatically.",
-        content: "By setting up a GitHub Actions workflow, every commit to your main branch compiles your Rust code into WASM and automatically deploys the static files to GitHub Pages.",
-    },
-];
+#[function_component(PostCard)]
+pub fn post_card(props: &PostCardProps) -> Html {
+    let post = &props.post;
+    html! {
+        <Link<Route> to={Route::Post { id: post.id.to_string() }} classes="thumb-card-link">
+            <article class="thumb-card">
+                <div class="thumb-wrapper">
+                    <img src={post.thumbnail} alt={post.title} loading="lazy" />
+                    <span class="specimen-tag">{ post.log_no }</span>
+                </div>
+                <div class="thumb-info">
+                    <time class="thumb-date">
+                        <span class="calendar-symbol">{ "§" }</span>
+                        { post.date }
+                    </time>
+                    <h3 class="thumb-title">{ post.title }</h3>
+                </div>
+            </article>
+        </Link<Route>>
+    }
+}
 
-// 3. Home Page Component
+// 3. Home Page Component (Masthead + 3-Column Field Notes Grid)
 #[function_component(HomePage)]
 fn home_page() -> Html {
     html! {
         <div class="page-container">
-            <section class="hero">
-                <span class="badge">{ "🦀 Powered by Rust & WebAssembly" }</span>
-                <h1>{ "Welcome to My Website" }</h1>
-                <p class="subtitle">
-                    { "A blazing-fast personal blog and portfolio built with Yew, WebAssembly, and hosted on GitHub Pages." }
+            <header class="masthead">
+                <div class="masthead-stamp">
+                    <span>{ "№ 01" }</span>
+                    <span class="stamp-divider">{ "•" }</span>
+                    <span>{ "DISPATCHES & FIELD LOGS" }</span>
+                    <span class="stamp-divider">{ "•" }</span>
+                    <span>{ "AUTUMN 2026" }</span>
+                </div>
+                <h1 class="journal-title">{ "Guilherme Silva Accioli" }</h1>
+                <p class="journal-tagline">
+                    { "An open laboratory journal documenting explorations in Rust, WebAssembly, systems programming, and client-side engineering." }
                 </p>
-                <div class="hero-actions">
-                    <Link<Route> to={Route::Blog} classes="btn btn-primary">{ "Read the Blog →" }</Link<Route>>
-                    <Link<Route> to={Route::About} classes="btn btn-secondary">{ "About Me" }</Link<Route>>
+                <div class="masthead-actions">
+                    <Link<Route> to={Route::Blog} classes="btn btn-primary">{ "Browse Field Notes →" }</Link<Route>>
+                    <Link<Route> to={Route::About} classes="btn btn-secondary">{ "About the Researcher" }</Link<Route>>
+                </div>
+            </header>
+
+            <section class="latest-posts-section">
+                <div class="section-title-row">
+                    <div>
+                        <span class="section-kicker">{ "INDEX ARCHIVE" }</span>
+                        <h2>{ "Recent Dispatches" }</h2>
+                    </div>
+                    <span class="section-subtitle">{ "Click any plate to examine study" }</span>
+                </div>
+                <div class="thumbnail-grid">
+                    {
+                        POSTS.iter().map(|post| {
+                            html! {
+                                <PostCard post={post.clone()} key={post.id} />
+                            }
+                        }).collect::<Html>()
+                    }
                 </div>
             </section>
         </div>
@@ -77,21 +99,15 @@ fn blog_page() -> Html {
     html! {
         <div class="page-container">
             <header class="section-header">
-                <h2>{ "Blog Articles" }</h2>
-                <p>{ "Thoughts, tutorials, and notes on software and technology." }</p>
+                <span class="section-kicker">{ "FIELD LOGBOOK" }</span>
+                <h2>{ "Complete Archive of Dispatches" }</h2>
+                <p>{ "Chronological index of experiments, architecture notes, and software studies." }</p>
             </header>
-            <div class="posts-grid">
+            <div class="thumbnail-grid">
                 {
                     POSTS.iter().map(|post| {
                         html! {
-                            <article class="post-card" key={post.id}>
-                                <span class="post-date">{ post.date }</span>
-                                <h3>{ post.title }</h3>
-                                <p>{ post.summary }</p>
-                                <Link<Route> to={Route::Post { id: post.id.to_string() }} classes="read-more">
-                                    { "Read Article →" }
-                                </Link<Route>>
-                            </article>
+                            <PostCard post={post.clone()} key={post.id} />
                         }
                     }).collect::<Html>()
                 }
@@ -100,7 +116,7 @@ fn blog_page() -> Html {
     }
 }
 
-// 5. Single Blog Post Page Component
+// 5. Single Blog Post Page Component (Renders Markdown from Individual File)
 #[derive(Properties, PartialEq)]
 struct PostPageProps {
     id: String,
@@ -112,24 +128,37 @@ fn post_page(props: &PostPageProps) -> Html {
 
     html! {
         <div class="page-container">
-            <Link<Route> to={Route::Blog} classes="back-link">{ "← Back to Articles" }</Link<Route>>
+            <Link<Route> to={Route::Home} classes="back-link">{ "← Back to Field Index" }</Link<Route>>
             {
                 if let Some(post) = post {
                     html! {
                         <article class="post-detail">
-                            <span class="post-date">{ post.date }</span>
-                            <h1>{ post.title }</h1>
+                            <div class="detail-header">
+                                <div class="detail-meta">
+                                    <span class="specimen-badge">{ post.log_no }</span>
+                                    <time class="post-date">{ post.date }</time>
+                                </div>
+                                <h1 class="detail-title">{ post.title }</h1>
+                            </div>
+                            <div class="post-hero-image">
+                                <img src={post.thumbnail} alt={post.title} />
+                            </div>
                             <div class="post-content">
-                                <p>{ post.content }</p>
+                                <p class="post-lead">{ post.summary }</p>
+                                <hr class="entry-divider" />
+                                <div class="markdown-body">
+                                    { render_markdown(post.content_md) }
+                                </div>
                             </div>
                         </article>
                     }
                 } else {
                     html! {
                         <div class="not-found-card">
-                            <h2>{ "Post Not Found" }</h2>
-                            <p>{ format!("No article with ID \"{}\" exists.", props.id) }</p>
-                            <Link<Route> to={Route::Blog} classes="btn btn-primary">{ "Go to Blog" }</Link<Route>>
+                            <span class="section-kicker">{ "TERRA INCOGNITA" }</span>
+                            <h2>{ "Log Entry Not Found" }</h2>
+                            <p>{ format!("No dispatch with catalog code \"{}\" exists in the registry.", props.id) }</p>
+                            <Link<Route> to={Route::Home} classes="btn btn-primary">{ "Return to Index" }</Link<Route>>
                         </div>
                     }
                 }
@@ -144,19 +173,30 @@ fn about_page() -> Html {
     html! {
         <div class="page-container">
             <header class="section-header">
-                <h2>{ "About Me" }</h2>
+                <span class="section-kicker">{ "FIELD STATION" }</span>
+                <h2>{ "About the Researcher" }</h2>
             </header>
             <div class="about-card">
-                <h3>{ "Guilherme Silva Accioli" }</h3>
-                <p>
-                    { "This website serves as a live demonstration of a modern frontend application built completely in Rust with the Yew framework." }
+                <div class="about-header">
+                    <span class="avatar-seal">{ "🧭" }</span>
+                    <div>
+                        <h3 class="about-name">{ "Guilherme Silva Accioli" }</h3>
+                        <span class="about-role">{ "Systems Developer & WebAssembly Explorer" }</span>
+                    </div>
+                </div>
+                <p class="about-bio">
+                    { "This field journal documents investigations into compiled frontend software, high-performance web tooling, and resilient application architectures built with Rust and WebAssembly." }
                 </p>
-                <div class="skills-list">
-                    <span class="skill-tag">{ "Rust" }</span>
-                    <span class="skill-tag">{ "WebAssembly" }</span>
-                    <span class="skill-tag">{ "Yew" }</span>
-                    <span class="skill-tag">{ "Trunk" }</span>
-                    <span class="skill-tag">{ "GitHub Pages" }</span>
+                <div class="specimen-tags-section">
+                    <span class="tags-label">{ "RESEARCH DOMAINS & TOOLKIT:" }</span>
+                    <div class="skills-list">
+                        <span class="skill-tag">{ "Rust Language" }</span>
+                        <span class="skill-tag">{ "WebAssembly" }</span>
+                        <span class="skill-tag">{ "Yew Framework" }</span>
+                        <span class="skill-tag">{ "Trunk Bundler" }</span>
+                        <span class="skill-tag">{ "GitHub Pages" }</span>
+                        <span class="skill-tag">{ "Systems Architecture" }</span>
+                    </div>
                 </div>
             </div>
         </div>
@@ -168,10 +208,10 @@ fn about_page() -> Html {
 fn not_found_page() -> Html {
     html! {
         <div class="page-container not-found-card">
-            <h1>{ "404" }</h1>
-            <h2>{ "Page Not Found" }</h2>
-            <p>{ "The page you are looking for does not exist." }</p>
-            <Link<Route> to={Route::Home} classes="btn btn-primary">{ "Back to Home" }</Link<Route>>
+            <span class="section-kicker">{ "CHART ERROR 404" }</span>
+            <h1>{ "Uncharted Territory" }</h1>
+            <p>{ "The requested dispatch or coordinate could not be found in the current logbook." }</p>
+            <Link<Route> to={Route::Home} classes="btn btn-primary">{ "Return to Base Index" }</Link<Route>>
         </div>
     }
 }
@@ -196,12 +236,15 @@ fn app() -> Html {
                 <nav class="navbar">
                     <div class="nav-content">
                         <Link<Route> to={Route::Home} classes="nav-logo">
-                            <span class="logo-icon">{ "🦀" }</span>
-                            <span>{ "Guilherme" }</span>
+                            <span class="logo-compass">{ "🧭" }</span>
+                            <div class="logo-text">
+                                <span class="logo-main">{ "G. SILVA ACCIOLI" }</span>
+                                <span class="logo-sub">{ "FIELD NOTES · EST. 2026" }</span>
+                            </div>
                         </Link<Route>>
                         <div class="nav-links">
-                            <Link<Route> to={Route::Home} classes="nav-item">{ "Home" }</Link<Route>>
-                            <Link<Route> to={Route::Blog} classes="nav-item">{ "Blog" }</Link<Route>>
+                            <Link<Route> to={Route::Home} classes="nav-item">{ "Index" }</Link<Route>>
+                            <Link<Route> to={Route::Blog} classes="nav-item">{ "Field Notes" }</Link<Route>>
                             <Link<Route> to={Route::About} classes="nav-item">{ "About" }</Link<Route>>
                         </div>
                     </div>
@@ -212,7 +255,10 @@ fn app() -> Html {
                 </main>
 
                 <footer class="footer">
-                    <p>{ "Built with Rust + Yew + WebAssembly • Hosted on GitHub Pages" }</p>
+                    <div class="footer-content">
+                        <p class="footer-quote">{ "“All models are wrong, but some are useful.”" }</p>
+                        <p class="footer-meta">{ "Written in Rust · Rendered in WebAssembly via Yew · Dispatched from GitHub Pages" }</p>
+                    </div>
                 </footer>
             </div>
         </BrowserRouter>

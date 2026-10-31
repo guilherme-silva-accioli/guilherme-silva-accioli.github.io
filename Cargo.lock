@@ -493,7 +493,9 @@ dependencies = [
 name = "portfolio"
 version = "0.1.0"
 dependencies = [
+ "gloo-utils",
  "pulldown-cmark",
+ "web-sys",
  "yew",
  "yew-router",
 ]

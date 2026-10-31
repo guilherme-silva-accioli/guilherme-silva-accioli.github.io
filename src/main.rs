@@ -124,6 +124,38 @@ pub struct CommentsProps {
 
 #[function_component(Comments)]
 pub fn comments(props: &CommentsProps) -> Html {
+    let container_ref = use_node_ref();
+
+    {
+        let container_ref = container_ref.clone();
+        let post_id = props.post_id.clone();
+        use_effect_with(post_id, move |id| {
+            if let Some(container) = container_ref.cast::<web_sys::HtmlElement>() {
+                container.set_inner_html("");
+                let document = gloo_utils::document();
+                if let Ok(script) = document.create_element("script") {
+                    let _ = script.set_attribute("src", "https://giscus.app/client.js");
+                    let _ = script.set_attribute("data-repo", "guilherme-silva-accioli/guilherme-silva-accioli.github.io");
+                    let _ = script.set_attribute("data-repo-id", "R_kgDOVcg5fQ");
+                    let _ = script.set_attribute("data-category", "General");
+                    let _ = script.set_attribute("data-category-id", "DIC_kwDOVcg5fc4DKDGk");
+                    let _ = script.set_attribute("data-mapping", "specific");
+                    let _ = script.set_attribute("data-term", id);
+                    let _ = script.set_attribute("data-strict", "0");
+                    let _ = script.set_attribute("data-reactions-enabled", "1");
+                    let _ = script.set_attribute("data-emit-metadata", "0");
+                    let _ = script.set_attribute("data-input-position", "top");
+                    let _ = script.set_attribute("data-theme", "light");
+                    let _ = script.set_attribute("data-lang", "en");
+                    let _ = script.set_attribute("crossorigin", "anonymous");
+                    let _ = script.set_attribute("async", "true");
+                    let _ = container.append_child(&script);
+                }
+            }
+            || ()
+        });
+    }
+
     html! {
         <section class="comments-section">
             <div class="comments-header">
@@ -133,23 +165,7 @@ pub fn comments(props: &CommentsProps) -> Html {
                     { "Contributions and notes from fellow researchers. Authenticate with GitHub to record an observation." }
                 </p>
             </div>
-            <div class="comments-widget-container">
-                <giscus-widget
-                    id="comments"
-                    repo="guilherme-silva-accioli/guilherme-silva-accioli.github.io"
-                    repoid="R_kgDOVcg5fQ"
-                    category="General"
-                    categoryid="DIC_kwDOVcg5fc4DKDGk"
-                    mapping="specific"
-                    term={props.post_id.clone()}
-                    reactionsenabled="1"
-                    emitmetadata="0"
-                    inputposition="top"
-                    theme="light"
-                    lang="en"
-                    loading="lazy">
-                </giscus-widget>
-            </div>
+            <div ref={container_ref} class="comments-widget-container"></div>
         </section>
     }
 }

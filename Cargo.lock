@@ -493,8 +493,12 @@ dependencies = [
 name = "portfolio"
 version = "0.1.0"
 dependencies = [
+ "gloo-net",
  "gloo-utils",
  "pulldown-cmark",
+ "serde",
+ "serde_json",
+ "wasm-bindgen-futures",
  "web-sys",
  "yew",
  "yew-router",

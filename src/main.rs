@@ -1,5 +1,9 @@
+mod gallery;
+mod mural;
 mod posts;
 
+use gallery::{GalleryItem, GALLERY_ITEMS};
+use mural::MuralPage;
 use posts::{BlogPost, POSTS, render_markdown};
 use yew::prelude::*;
 use yew_router::prelude::*;
@@ -13,6 +17,10 @@ pub enum Route {
     Blog,
     #[at("/blog/:id")]
     Post { id: String },
+    #[at("/gallery")]
+    Gallery,
+    #[at("/mural")]
+    Mural,
     #[at("/about")]
     About,
     #[not_found]
@@ -48,7 +56,81 @@ pub fn post_card(props: &PostCardProps) -> Html {
     }
 }
 
-// 3. Home Page Component (Masthead + 3-Column Field Notes Grid)
+// 3. Gallery Card Component (Plate, Image, Quote, External Source)
+#[derive(Properties, PartialEq)]
+pub struct GalleryCardProps {
+    pub item: GalleryItem,
+    pub on_select: Callback<GalleryItem>,
+}
+
+#[function_component(GalleryCard)]
+pub fn gallery_card(props: &GalleryCardProps) -> Html {
+    let item = &props.item;
+    let on_image_click = {
+        let on_select = props.on_select.clone();
+        let item = item.clone();
+        Callback::from(move |_| {
+            on_select.emit(item.clone());
+        })
+    };
+
+    html! {
+        <article class="gallery-plate-card">
+            <div class="plate-top-bar">
+                <span class="plate-number">{ item.plate_no }</span>
+                <span class="plate-year">{ item.year }</span>
+            </div>
+
+            <div class="plate-image-frame" onclick={on_image_click}>
+                <img src={item.image_url} alt={item.title} loading="lazy" />
+                <div class="plate-zoom-badge">
+                    <span>{ "🔍 Expand Plate" }</span>
+                </div>
+            </div>
+
+            <div class="plate-details">
+                <h3 class="plate-title">{ item.title }</h3>
+
+                {
+                    if let Some(quote) = item.quote {
+                        html! {
+                            <blockquote class="plate-quote">
+                                <p class="quote-text">{ format!("“{}”", quote) }</p>
+                                {
+                                    if let Some(author) = item.quote_author {
+                                        html! { <cite class="quote-author">{ format!("— {}", author) }</cite> }
+                                    } else {
+                                        html! {}
+                                    }
+                                }
+                            </blockquote>
+                        }
+                    } else {
+                        html! {}
+                    }
+                }
+
+                {
+                    if let (Some(url), Some(name)) = (item.source_url, item.source_name) {
+                        html! {
+                            <div class="plate-footer">
+                                <a href={url} target="_blank" rel="noopener noreferrer" class="plate-source-link">
+                                    <span class="source-arrow">{ "↗" }</span>
+                                    <span>{ "Source: " }</span>
+                                    <span class="source-name">{ name }</span>
+                                </a>
+                            </div>
+                        }
+                    } else {
+                        html! {}
+                    }
+                }
+            </div>
+        </article>
+    }
+}
+
+// 4. Home Page Component (Masthead + Posts + Gallery Preview)
 #[function_component(HomePage)]
 fn home_page() -> Html {
     html! {
@@ -67,7 +149,7 @@ fn home_page() -> Html {
                 </p>
                 <div class="masthead-actions">
                     <Link<Route> to={Route::Blog} classes="btn btn-primary">{ "Browse Field Notes →" }</Link<Route>>
-                    <Link<Route> to={Route::About} classes="btn btn-secondary">{ "About the Researcher" }</Link<Route>>
+                    <Link<Route> to={Route::Gallery} classes="btn btn-secondary">{ "View Image Gallery" }</Link<Route>>
                 </div>
             </header>
 
@@ -77,13 +159,47 @@ fn home_page() -> Html {
                         <span class="section-kicker">{ "INDEX ARCHIVE" }</span>
                         <h2>{ "Recent Dispatches" }</h2>
                     </div>
-                    <span class="section-subtitle">{ "Click any plate to examine study" }</span>
+                    <Link<Route> to={Route::Blog} classes="section-subtitle-link">{ "All Notes →" }</Link<Route>>
                 </div>
                 <div class="thumbnail-grid">
                     {
-                        POSTS.iter().map(|post| {
+                        POSTS.iter().take(3).map(|post| {
                             html! {
                                 <PostCard post={post.clone()} key={post.id} />
+                            }
+                        }).collect::<Html>()
+                    }
+                </div>
+            </section>
+
+            <section class="gallery-home-section">
+                <div class="section-title-row">
+                    <div>
+                        <span class="section-kicker">{ "VISUAL ATLAS" }</span>
+                        <h2>{ "Featured Plates & Quotes" }</h2>
+                    </div>
+                    <Link<Route> to={Route::Gallery} classes="section-subtitle-link">{ "Open Gallery →" }</Link<Route>>
+                </div>
+                <div class="gallery-home-grid">
+                    {
+                        GALLERY_ITEMS.iter().take(3).map(|item| {
+                            html! {
+                                <div class="gallery-home-card" key={item.id}>
+                                    <div class="gallery-home-thumb">
+                                        <img src={item.image_url} alt={item.title} loading="lazy" />
+                                        <span class="specimen-tag">{ item.plate_no }</span>
+                                    </div>
+                                    <div class="gallery-home-content">
+                                        <h4>{ item.title }</h4>
+                                        {
+                                            if let Some(quote) = item.quote {
+                                                html! { <p class="gallery-home-quote">{ format!("“{}”", quote) }</p> }
+                                            } else {
+                                                html! {}
+                                            }
+                                        }
+                                    </div>
+                                </div>
                             }
                         }).collect::<Html>()
                     }
@@ -93,7 +209,7 @@ fn home_page() -> Html {
     }
 }
 
-// 4. Blog List Page Component
+// 5. Blog List Page Component
 #[function_component(BlogPage)]
 fn blog_page() -> Html {
     html! {
@@ -116,7 +232,98 @@ fn blog_page() -> Html {
     }
 }
 
-// 5. Comments Component (Giscus / GitHub Discussions)
+// 6. Gallery Page Component (With Lightbox Modal)
+#[function_component(GalleryPage)]
+fn gallery_page() -> Html {
+    let selected_item = use_state(|| None::<GalleryItem>);
+
+    let on_select = {
+        let selected_item = selected_item.clone();
+        Callback::from(move |item: GalleryItem| {
+            selected_item.set(Some(item));
+        })
+    };
+
+    let on_close = {
+        let selected_item = selected_item.clone();
+        Callback::from(move |_| {
+            selected_item.set(None);
+        })
+    };
+
+    html! {
+        <div class="page-container">
+            <header class="section-header">
+                <span class="section-kicker">{ "VISUAL ATLAS & ARCHIVES" }</span>
+                <h2>{ "Field Plates & Quotations" }</h2>
+                <p>{ "A curated exhibition of visual specimens, historical computing plates, and reflections." }</p>
+            </header>
+
+            <div class="gallery-grid">
+                {
+                    GALLERY_ITEMS.iter().map(|item| {
+                        html! {
+                            <GalleryCard item={item.clone()} on_select={on_select.clone()} key={item.id} />
+                        }
+                    }).collect::<Html>()
+                }
+            </div>
+
+            {
+                if let Some(item) = (*selected_item).clone() {
+                    html! {
+                        <div class="lightbox-overlay" onclick={on_close.clone()}>
+                            <div class="lightbox-modal" onclick={Callback::from(|e: MouseEvent| e.stop_propagation())}>
+                                <button class="lightbox-close-btn" onclick={on_close}>{ "✕" }</button>
+                                <div class="lightbox-image-container">
+                                    <img src={item.image_url} alt={item.title} />
+                                </div>
+                                <div class="lightbox-caption">
+                                    <span class="lightbox-plate">{ format!("{} • {}", item.plate_no, item.year) }</span>
+                                    <h3>{ item.title }</h3>
+                                    {
+                                        if let Some(quote) = item.quote {
+                                            html! {
+                                                <blockquote class="lightbox-quote">
+                                                    <p>{ format!("“{}”", quote) }</p>
+                                                    {
+                                                        if let Some(author) = item.quote_author {
+                                                            html! { <cite>{ format!("— {}", author) }</cite> }
+                                                        } else {
+                                                            html! {}
+                                                        }
+                                                    }
+                                                </blockquote>
+                                            }
+                                        } else {
+                                            html! {}
+                                        }
+                                    }
+                                    {
+                                        if let (Some(url), Some(name)) = (item.source_url, item.source_name) {
+                                            html! {
+                                                <a href={url} target="_blank" rel="noopener noreferrer" class="lightbox-source-link">
+                                                    <span>{ "↗ View Original Source: " }</span>
+                                                    <strong>{ name }</strong>
+                                                </a>
+                                            }
+                                        } else {
+                                            html! {}
+                                        }
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                    }
+                } else {
+                    html! {}
+                }
+            }
+        </div>
+    }
+}
+
+// 7. Comments Component (Giscus / GitHub Discussions)
 #[derive(Properties, PartialEq)]
 pub struct CommentsProps {
     pub post_id: String,
@@ -170,7 +377,7 @@ pub fn comments(props: &CommentsProps) -> Html {
     }
 }
 
-// 6. Single Blog Post Page Component (Renders Markdown from Individual File)
+// 8. Single Blog Post Page Component
 #[derive(Properties, PartialEq)]
 struct PostPageProps {
     id: String,
@@ -223,7 +430,7 @@ fn post_page(props: &PostPageProps) -> Html {
     }
 }
 
-// 6. About Page Component
+// 9. About Page Component
 #[function_component(AboutPage)]
 fn about_page() -> Html {
     html! {
@@ -259,7 +466,7 @@ fn about_page() -> Html {
     }
 }
 
-// 7. 404 Not Found Page Component
+// 10. 404 Not Found Page Component
 #[function_component(NotFoundPage)]
 fn not_found_page() -> Html {
     html! {
@@ -272,18 +479,20 @@ fn not_found_page() -> Html {
     }
 }
 
-// 8. Router Switcher
+// 11. Router Switcher
 fn switch(route: Route) -> Html {
     match route {
         Route::Home => html! { <HomePage /> },
         Route::Blog => html! { <BlogPage /> },
         Route::Post { id } => html! { <PostPage {id} /> },
+        Route::Gallery => html! { <GalleryPage /> },
+        Route::Mural => html! { <MuralPage /> },
         Route::About => html! { <AboutPage /> },
         Route::NotFound => html! { <NotFoundPage /> },
     }
 }
 
-// 9. Root App Component with Navbar and Footer
+// 12. Root App Component with Navbar and Footer
 #[function_component(App)]
 fn app() -> Html {
     html! {
@@ -301,6 +510,8 @@ fn app() -> Html {
                         <div class="nav-links">
                             <Link<Route> to={Route::Home} classes="nav-item">{ "Index" }</Link<Route>>
                             <Link<Route> to={Route::Blog} classes="nav-item">{ "Field Notes" }</Link<Route>>
+                            <Link<Route> to={Route::Gallery} classes="nav-item">{ "Gallery" }</Link<Route>>
+                            <Link<Route> to={Route::Mural} classes="nav-item">{ "Mural" }</Link<Route>>
                             <Link<Route> to={Route::About} classes="nav-item">{ "About" }</Link<Route>>
                         </div>
                     </div>

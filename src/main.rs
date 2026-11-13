@@ -1,9 +1,7 @@
 mod gallery;
-mod mural;
 mod posts;
 
 use gallery::{GalleryItem, GALLERY_ITEMS};
-use mural::MuralPage;
 use posts::{BlogPost, POSTS, render_markdown};
 use yew::prelude::*;
 use yew_router::prelude::*;
@@ -19,8 +17,6 @@ pub enum Route {
     Post { id: String },
     #[at("/gallery")]
     Gallery,
-    #[at("/mural")]
-    Mural,
     #[at("/about")]
     About,
     #[not_found]
@@ -486,7 +482,6 @@ fn switch(route: Route) -> Html {
         Route::Blog => html! { <BlogPage /> },
         Route::Post { id } => html! { <PostPage {id} /> },
         Route::Gallery => html! { <GalleryPage /> },
-        Route::Mural => html! { <MuralPage /> },
         Route::About => html! { <AboutPage /> },
         Route::NotFound => html! { <NotFoundPage /> },
     }
@@ -511,7 +506,6 @@ fn app() -> Html {
                             <Link<Route> to={Route::Home} classes="nav-item">{ "Index" }</Link<Route>>
                             <Link<Route> to={Route::Blog} classes="nav-item">{ "Field Notes" }</Link<Route>>
                             <Link<Route> to={Route::Gallery} classes="nav-item">{ "Gallery" }</Link<Route>>
-                            <Link<Route> to={Route::Mural} classes="nav-item">{ "Mural" }</Link<Route>>
                             <Link<Route> to={Route::About} classes="nav-item">{ "About" }</Link<Route>>
                         </div>
                     </div>
